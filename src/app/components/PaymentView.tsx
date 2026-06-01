@@ -1,39 +1,40 @@
 import { useState } from "react";
-import { ArrowRight, CreditCard, Smartphone, Tag, Shield, Check, Loader2, MapPin, Clock } from "lucide-react";
+import { ArrowRight, CreditCard, Smartphone, Tag, Shield, Check, Loader2, MapPin, Clock, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
-import type { Parking } from "./MapView";
+import type { Parking } from "../types/parking";
 
 interface PaymentViewProps {
   booking: { parking: Parking; date: string; from: string; to: string; total: number };
   onBack: () => void;
-  onSuccess: () => void;
+  onSuccess: () => Promise<void>;
 }
 
 const PAYMENT_METHODS = [
   { id: "card", label: "کارت بانکی", icon: <CreditCard size={18} />, desc: "ویزا، مسترکارت، شتاب" },
-  { id: "wallet", label: "کیف پول", icon: <Smartphone size={18} />, desc: "موجودی: ۱۲۰,۰۰۰ تومان" },
-  { id: "installment", label: "قسطی", icon: <Tag size={18} />, desc: "۳ تا ۱۲ ماهه بدون کارمزد" },
+  { id: "wallet", label: "کیف پول", icon: <Smartphone size={18} />, desc: "پرداخت از اعتبار حساب کاربر" },
+  { id: "installment", label: "پرداخت سازمانی", icon: <Tag size={18} />, desc: "برای قراردادهای ناوگان و سازمان‌ها" },
 ];
 
 export default function PaymentView({ booking, onBack, onSuccess }: PaymentViewProps) {
   const [method, setMethod] = useState("card");
-  const [cardNum, setCardNum] = useState("6104 3371 8899 0012");
-  const [expiry, setExpiry] = useState("۰۸/۲۷");
-  const [cvv, setCvv] = useState("***");
-  const [coupon, setCoupon] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
+  const [cardNum, setCardNum] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const discount = couponApplied ? Math.round(booking.total * 0.1) : 0;
-  const finalTotal = booking.total - discount;
+  const finalTotal = booking.total;
 
-  const applyCoupon = () => {
-    if (coupon === "PARK10") setCouponApplied(true);
-  };
-
-  const handlePay = () => {
+  const handlePay = async () => {
     setLoading(true);
-    setTimeout(() => { setLoading(false); onSuccess(); }, 2200);
+    setError(null);
+    try {
+      await onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "خطا در ثبت پرداخت");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,7 +53,7 @@ export default function PaymentView({ booking, onBack, onSuccess }: PaymentViewP
         <div className="rounded-2xl p-5 mb-6" style={{ background: "rgba(13,24,48,0.8)", border: "1px solid rgba(59,130,246,0.15)" }}>
           <h3 style={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 600, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>خلاصه رزرو</h3>
           <div className="flex items-start gap-4">
-            <img src={booking.parking.imageUrl} alt={booking.parking.name} className="w-20 h-16 rounded-xl object-cover" style={{ filter: "brightness(0.7)" }} />
+            <img src={booking.parking.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%23070e1e'/%3E%3Ctext x='80' y='66' text-anchor='middle' fill='%2394a3b8' font-size='18' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E"} alt={booking.parking.name} className="w-20 h-16 rounded-xl object-cover" style={{ filter: "brightness(0.7)" }} />
             <div className="flex-1">
               <div style={{ color: "#f1f5f9", fontWeight: 700, marginBottom: "4px" }}>{booking.parking.name}</div>
               <div className="flex items-center gap-1 mb-1" style={{ color: "#64748b", fontSize: "0.78rem" }}>
@@ -116,58 +117,12 @@ export default function PaymentView({ booking, onBack, onSuccess }: PaymentViewP
           </div>
         )}
 
-        {/* Coupon */}
-        <div className="rounded-2xl p-4 mb-6" style={{ background: "rgba(13,24,48,0.8)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="flex items-center gap-2">
-            <Tag size={14} style={{ color: "#64748b" }} />
-            <span style={{ color: "#94a3b8", fontSize: "0.82rem" }}>کد تخفیف</span>
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl p-4" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.24)", color: "#fca5a5" }}>
+            <AlertCircle size={18} className="mt-0.5 shrink-0" />
+            <span className="text-sm leading-7">{error}</span>
           </div>
-          <div className="flex gap-2 mt-2">
-            <input
-              value={coupon}
-              onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-              placeholder="PARK10"
-              className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", direction: "ltr" }}
-            />
-            <Button
-              onClick={applyCoupon}
-              variant="outline"
-              className="px-4 rounded-xl text-sm"
-              style={{ border: "1px solid rgba(59,130,246,0.3)", color: "#3b82f6", background: "rgba(59,130,246,0.08)" }}
-            >
-              اعمال
-            </Button>
-          </div>
-          {couponApplied && (
-            <div className="flex items-center gap-2 mt-2" style={{ color: "#10b981", fontSize: "0.78rem" }}>
-              <Check size={12} />
-              کد تخفیف ۱۰٪ اعمال شد!
-            </div>
-          )}
-        </div>
-
-        {/* Price Summary */}
-        <div className="rounded-2xl p-5 mb-6 space-y-3" style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
-          <div className="flex justify-between" style={{ fontSize: "0.85rem", color: "#64748b" }}>
-            <span>مبلغ رزرو</span>
-            <span>{booking.total.toLocaleString("fa-IR")} تومان</span>
-          </div>
-          {couponApplied && (
-            <div className="flex justify-between" style={{ fontSize: "0.85rem", color: "#10b981" }}>
-              <span>تخفیف ۱۰٪</span>
-              <span>— {discount.toLocaleString("fa-IR")} تومان</span>
-            </div>
-          )}
-          <div className="flex justify-between" style={{ fontSize: "0.85rem", color: "#64748b" }}>
-            <span>کارمزد درگاه</span>
-            <span>رایگان</span>
-          </div>
-          <div className="border-t pt-3 flex justify-between" style={{ borderColor: "rgba(59,130,246,0.15)" }}>
-            <span style={{ fontWeight: 700, color: "#f1f5f9" }}>مبلغ نهایی</span>
-            <span style={{ fontWeight: 800, color: "#3b82f6", fontSize: "1.1rem" }}>{finalTotal.toLocaleString("fa-IR")} تومان</span>
-          </div>
-        </div>
+        )}
 
         {/* Security note */}
         <div className="flex items-center gap-2 mb-4" style={{ color: "#64748b", fontSize: "0.75rem" }}>

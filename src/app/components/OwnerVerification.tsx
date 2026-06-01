@@ -13,8 +13,8 @@ export default function OwnerVerification({ onBack, onComplete }: OwnerVerificat
   const [step, setStep] = useState<Step>(1);
   const [submitted, setSubmitted] = useState(false);
 
-  const [form1, setForm1] = useState({ name: "محمد رضایی", national: "۰۰۱۲۳۴۵۶۷۸", phone: "۰۹۱۲۳۴۵۶۷۸۹", email: "m.rezaee@email.com" });
-  const [form2, setForm2] = useState({ address: "تهران، خیابان آزادی، پلاک ۱۲", parkingNum: "P-۱۲۳۴", ownerName: "محمد رضایی", type: "iot", capacity: "۲۰" });
+  const [form1, setForm1] = useState({ name: "", national: "", phone: "", email: "" });
+  const [form2, setForm2] = useState({ address: "", parkingNum: "", ownerName: "", type: "iot", capacity: "" });
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
   const [iotMode, setIotMode] = useState(true);
 
@@ -102,9 +102,9 @@ export default function OwnerVerification({ onBack, onComplete }: OwnerVerificat
             <h2 style={{ color: "#e2e8f0", fontWeight: 700, marginBottom: "20px", fontSize: "1rem" }}>اطلاعات شخصی مالک</h2>
             <div className="space-y-4">
               {[
-                { key: "name", label: "نام و نام خانوادگی", icon: <User size={14} />, placeholder: "محمد رضایی" },
-                { key: "national", label: "کد ملی", icon: <Hash size={14} />, placeholder: "۰۰۱۲۳۴۵۶۷۸" },
-                { key: "phone", label: "شماره تماس (ضروری)", icon: <Phone size={14} />, placeholder: "۰۹۱۲۳۴۵۶۷۸۹" },
+                { key: "name", label: "نام و نام خانوادگی", icon: <User size={14} />, placeholder: "نام مطابق مدارک" },
+                { key: "national", label: "کد ملی", icon: <Hash size={14} />, placeholder: "کد ملی" },
+                { key: "phone", label: "شماره تماس (ضروری)", icon: <Phone size={14} />, placeholder: "شماره موبایل" },
                 { key: "email", label: "ایمیل", icon: <FileText size={14} />, placeholder: "example@email.com" },
               ].map((f) => (
                 <div key={f.key}>
@@ -135,10 +135,10 @@ export default function OwnerVerification({ onBack, onComplete }: OwnerVerificat
             <h2 style={{ color: "#e2e8f0", fontWeight: 700, marginBottom: "20px", fontSize: "1rem" }}>مشخصات پارکینگ و مدارک</h2>
             <div className="space-y-4">
               {[
-                { key: "address", label: "آدرس کامل پارکینگ", placeholder: "تهران، خیابان..." },
-                { key: "parkingNum", label: "شماره پارکینگ (طبق سند)", placeholder: "P-۱۲۳۴" },
-                { key: "ownerName", label: "نام مالک روی سند", placeholder: "محمد رضایی" },
-                { key: "capacity", label: "ظرفیت (تعداد جا)", placeholder: "۲۰" },
+                { key: "address", label: "آدرس کامل پارکینگ", placeholder: "آدرس کامل" },
+                { key: "parkingNum", label: "شماره پارکینگ (طبق سند)", placeholder: "شماره درج‌شده در سند" },
+                { key: "ownerName", label: "نام مالک روی سند", placeholder: "نام مطابق مدارک" },
+                { key: "capacity", label: "ظرفیت (تعداد جا)", placeholder: "تعداد جای پارک" },
               ].map((f) => (
                 <div key={f.key}>
                   <label style={{ color: "#94a3b8", fontSize: "0.78rem", display: "block", marginBottom: "6px" }}>{f.label}</label>

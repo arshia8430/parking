@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, AlertTriangle, QrCode, RefreshCw, Car } from "lucide-react";
 import { Button } from "./ui/button";
-import type { Parking } from "./MapView";
+import type { Parking, Reservation } from "../types/parking";
 
 interface QRCodeDisplayProps {
-  booking: { parking: Parking; date: string; from: string; to: string; total: number };
+  booking: ({ parking: Parking; date: string; from: string; to: string; total: number } & Partial<Pick<Reservation, "id" | "qrToken">>);
   onDone: () => void;
 }
 
@@ -113,8 +113,8 @@ export default function QRCodeDisplay({ booking, onDone }: QRCodeDisplayProps) {
   const [phase, setPhase] = useState<"entry" | "parked" | "exit" | "done">("entry");
   const [entryExpired, setEntryExpired] = useState(false);
 
-  const entryCode = `PARK-ENTRY-${booking.parking.id}-${Date.now()}`;
-  const exitCode = `PARK-EXIT-${booking.parking.id}-${Date.now() + 1}`;
+  const entryCode = booking.qrToken || `ENTRY-${booking.id || booking.parking.id}-${booking.date}-${booking.from}`;
+  const exitCode = `EXIT-${booking.id || booking.parking.id}-${booking.date}-${booking.to}`;
 
   return (
     <div dir="rtl" className="min-h-screen py-8 px-4" style={{ background: "#060c1a", fontFamily: "'Vazirmatn', Tahoma, sans-serif" }}>
