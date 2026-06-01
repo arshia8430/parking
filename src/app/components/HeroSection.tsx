@@ -3,6 +3,8 @@ import { Calendar, ChevronLeft, Clock, LocateFixed, MapPin, Search } from "lucid
 import { Button } from "./ui/button";
 import type { SearchRequest } from "../types/parking";
 
+import type { PlatformStats, SearchRequest } from "../types/parking";
+
 interface HeroSectionProps {
   onSearch: (query: SearchRequest) => void;
 }
