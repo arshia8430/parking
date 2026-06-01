@@ -2,16 +2,16 @@ import { useState } from "react";
 import { Search, MapPin, Clock, Calendar, ChevronLeft, Shield, Zap, Smartphone, Star, QrCode, Wifi } from "lucide-react";
 import { Button } from "./ui/button";
 
+import type { PlatformStats, SearchRequest } from "../types/parking";
+
 interface HeroSectionProps {
-  onSearch: (query: { location: string; date: string; from: string; to: string }) => void;
+  stats: PlatformStats;
+  onSearch: (query: SearchRequest) => void;
 }
 
-const STATS = [
-  { value: "۵۰۰۰+", label: "پارکینگ فعال" },
-  { value: "۱۲۰۰+", label: "مالک تأییدشده" },
-  { value: "۸۵۰۰۰+", label: "رزرو موفق" },
-  { value: "۴.۸", label: "امتیاز کاربران" },
-];
+function formatStat(value: number, suffix = "") {
+  return `${value.toLocaleString("fa-IR")}${suffix}`;
+}
 
 const FEATURES = [
   {
@@ -51,11 +51,18 @@ const HOW_IT_WORKS = [
   { step: "۴", title: "پارک کنید", desc: "با QR کد وارد پارکینگ شوید", icon: <QrCode size={20} /> },
 ];
 
-export default function HeroSection({ onSearch }: HeroSectionProps) {
-  const [location, setLocation] = useState("تهران، میدان آزادی");
-  const [date, setDate] = useState("۱۴۰۳/۱۰/۱۵");
-  const [from, setFrom] = useState("۰۸:۰۰");
-  const [to, setTo] = useState("۱۲:۰۰");
+export default function HeroSection({ stats, onSearch }: HeroSectionProps) {
+  const [location, setLocation] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [from, setFrom] = useState("08:00");
+  const [to, setTo] = useState("12:00");
+
+  const statItems = [
+    { value: formatStat(stats.activeParkings), label: "پارکینگ فعال" },
+    { value: formatStat(stats.verifiedOwners), label: "مالک تأییدشده" },
+    { value: formatStat(stats.successfulReservations), label: "رزرو موفق" },
+    { value: stats.averageRating ? stats.averageRating.toLocaleString("fa-IR") : "—", label: "امتیاز کاربران" },
+  ];
 
   return (
     <div dir="rtl" style={{ fontFamily: "'Vazirmatn', Tahoma, sans-serif" }}>
@@ -106,7 +113,7 @@ export default function HeroSection({ onSearch }: HeroSectionProps) {
                     onChange={(e) => setLocation(e.target.value)}
                     className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
                     style={{ paddingRight: "36px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0" }}
-                    placeholder="آدرس یا منطقه..."
+                    placeholder="مثلاً تهران، میدان آزادی"
                   />
                 </div>
               </div>
@@ -115,6 +122,7 @@ export default function HeroSection({ onSearch }: HeroSectionProps) {
                 <div className="relative">
                   <Calendar size={16} className="absolute top-1/2 -translate-y-1/2" style={{ right: "12px", color: "#94a3b8" }} />
                   <input
+                    type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full rounded-xl px-4 py-3 text-sm outline-none"
@@ -125,9 +133,9 @@ export default function HeroSection({ onSearch }: HeroSectionProps) {
               <div>
                 <label style={{ fontSize: "0.75rem", color: "#64748b", display: "block", marginBottom: "6px" }}>ساعت (از – تا)</label>
                 <div className="flex items-center gap-2">
-                  <input value={from} onChange={(e) => setFrom(e.target.value)} className="w-full rounded-xl px-3 py-3 text-sm text-center outline-none" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0" }} />
+                  <input type="time" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full rounded-xl px-3 py-3 text-sm text-center outline-none" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0" }} />
                   <span style={{ color: "#64748b", fontSize: "0.8rem" }}>تا</span>
-                  <input value={to} onChange={(e) => setTo(e.target.value)} className="w-full rounded-xl px-3 py-3 text-sm text-center outline-none" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0" }} />
+                  <input type="time" value={to} onChange={(e) => setTo(e.target.value)} className="w-full rounded-xl px-3 py-3 text-sm text-center outline-none" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0" }} />
                 </div>
               </div>
             </div>
@@ -143,7 +151,7 @@ export default function HeroSection({ onSearch }: HeroSectionProps) {
 
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 w-full max-w-2xl">
-            {STATS.map((s) => (
+            {statItems.map((s) => (
               <div key={s.label} className="text-center">
                 <div style={{ fontSize: "1.7rem", fontWeight: 800, color: "#f1f5f9", lineHeight: 1 }}>{s.value}</div>
                 <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "4px" }}>{s.label}</div>

@@ -3,26 +3,11 @@ import { TrendingUp, Car, Clock, CheckCircle, XCircle, BarChart3, Users, Wifi, S
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "./ui/button";
 
-const OCCUPANCY_DATA = [
-  { time: "۰۶", value: 12 }, { time: "۰۷", value: 28 }, { time: "۰۸", value: 65 },
-  { time: "۰۹", value: 82 }, { time: "۱۰", value: 75 }, { time: "۱۱", value: 70 },
-  { time: "۱۲", value: 88 }, { time: "۱۳", value: 92 }, { time: "۱۴", value: 78 },
-  { time: "۱۵", value: 55 }, { time: "۱۶", value: 45 }, { time: "۱۷", value: 72 },
-  { time: "۱۸", value: 95 }, { time: "۱۹", value: 80 }, { time: "۲۰", value: 50 },
-];
+const OCCUPANCY_DATA: { time: string; value: number }[] = [];
 
-const REVENUE_DATA = [
-  { day: "شن", revenue: 450000 }, { day: "یک", revenue: 620000 }, { day: "دو", revenue: 380000 },
-  { day: "سه", revenue: 750000 }, { day: "چهار", revenue: 820000 }, { day: "پنج", revenue: 1100000 }, { day: "جمع", revenue: 980000 },
-];
+const REVENUE_DATA: { day: string; revenue: number }[] = [];
 
-const ENTRY_LOG = [
-  { id: 1, time: "۱۳:۴۵", plate: "۴۵ب۱۲۳ ت", driver: "علی رضایی", status: "entered", type: "iot" },
-  { id: 2, time: "۱۳:۲۱", plate: "۷۸ج۴۵۶ ن", driver: "مریم کریمی", status: "exited", type: "iot" },
-  { id: 3, time: "۱۳:۱۲", plate: "۲۳د۷۸۹ م", driver: "حسن محمدی", status: "pending", type: "manual" },
-  { id: 4, time: "۱۲:۵۸", plate: "۹۰ه۰۱۲ ک", driver: "زهرا احمدی", status: "entered", type: "manual" },
-  { id: 5, time: "۱۲:۴۴", plate: "۵۶و۳۴۵ ص", driver: "محمد تهرانی", status: "exited", type: "iot" },
-];
+const ENTRY_LOG: { id: number; time: string; plate: string; driver: string; status: "entered" | "exited" | "pending"; type: "iot" | "manual" }[] = [];
 
 const STATUS_LOG = {
   entered: { label: "ورود", color: "#10b981", bg: "rgba(16,185,129,0.1)" },
@@ -30,11 +15,7 @@ const STATUS_LOG = {
   pending: { label: "در انتظار", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
 };
 
-const PARKINGS = [
-  { id: 1, name: "پارکینگ آزادی", spaces: 20, occupied: 15, revenue: 2450000, type: "iot", status: "active" },
-  { id: 2, name: "پارکینگ مرکزی", spaces: 35, occupied: 28, revenue: 3890000, type: "manual", status: "active" },
-  { id: 3, name: "پارکینگ شعبه شمال", spaces: 15, occupied: 4, revenue: 980000, type: "iot", status: "maintenance" },
-];
+const PARKINGS: { id: number; name: string; spaces: number; occupied: number; revenue: number; type: "iot" | "manual"; status: "active" | "maintenance" }[] = [];
 
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
@@ -63,12 +44,11 @@ export default function OwnerPortal({ onVerify }: { onVerify: () => void }) {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <h1 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#f1f5f9", marginBottom: "2px" }}>پورتال مالکین</h1>
-            <p style={{ color: "#64748b", fontSize: "0.8rem" }}>خوش آمدید، محمد رضایی</p>
+            <p style={{ color: "#64748b", fontSize: "0.8rem" }}>داشبورد عملیاتی پارکینگ‌های ثبت‌شده</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Bell size={18} style={{ color: "#64748b", cursor: "pointer" }} />
-              <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#ef4444", fontSize: "0.55rem", color: "white" }}>۳</div>
             </div>
             <Button
               onClick={onVerify}

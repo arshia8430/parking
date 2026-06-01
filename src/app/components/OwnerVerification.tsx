@@ -13,8 +13,8 @@ export default function OwnerVerification({ onBack, onComplete }: OwnerVerificat
   const [step, setStep] = useState<Step>(1);
   const [submitted, setSubmitted] = useState(false);
 
-  const [form1, setForm1] = useState({ name: "محمد رضایی", national: "۰۰۱۲۳۴۵۶۷۸", phone: "۰۹۱۲۳۴۵۶۷۸۹", email: "m.rezaee@email.com" });
-  const [form2, setForm2] = useState({ address: "تهران، خیابان آزادی، پلاک ۱۲", parkingNum: "P-۱۲۳۴", ownerName: "محمد رضایی", type: "iot", capacity: "۲۰" });
+  const [form1, setForm1] = useState({ name: "", national: "", phone: "", email: "" });
+  const [form2, setForm2] = useState({ address: "", parkingNum: "", ownerName: "", type: "iot", capacity: "" });
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
   const [iotMode, setIotMode] = useState(true);
 
