@@ -1,4 +1,4 @@
-import type { BookingDraft, Parking, PlatformStats, Reservation, SearchRequest } from "../types/parking";
+import type { AuthUser, BookingDraft, OwnerChartPoint, OwnerDashboard, OwnerEntryLog, OwnerMetric, OwnerParking, Parking, Reservation, SearchRequest } from "../types/parking";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
 
@@ -19,6 +19,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -40,7 +41,7 @@ function toNumber(value: unknown, fallback = 0) {
 
 function normalizeParking(item: any): Parking {
   return {
-    id: String(item.id ?? item.parkingId),
+    id: String(item.id ?? item.parkingId ?? ""),
     name: String(item.name ?? item.title ?? ""),
     address: String(item.address ?? ""),
     price: toNumber(item.price ?? item.hourlyPrice ?? item.pricePerHour),
@@ -55,14 +56,14 @@ function normalizeParking(item: any): Parking {
     covered: Boolean(item.covered ?? item.isCovered),
     features: Array.isArray(item.features) ? item.features.map(String) : [],
     imageUrl: item.imageUrl ?? item.image_url ?? item.coverImage,
-    lat: toNumber(item.lat ?? item.latitude ?? item.location?.lat, 35.7219),
-    lng: toNumber(item.lng ?? item.longitude ?? item.location?.lng, 51.3347),
+    lat: toNumber(item.lat ?? item.latitude ?? item.location?.lat),
+    lng: toNumber(item.lng ?? item.longitude ?? item.location?.lng),
   };
 }
 
 function normalizeReservation(item: any): Reservation {
   return {
-    id: String(item.id ?? item.reservationId),
+    id: String(item.id ?? item.reservationId ?? ""),
     parking: normalizeParking(item.parking ?? item.parkingLot ?? {}),
     date: String(item.date ?? item.startsAt?.slice?.(0, 10) ?? ""),
     from: String(item.from ?? item.startTime ?? item.startsAt?.slice?.(11, 16) ?? ""),
@@ -73,15 +74,59 @@ function normalizeReservation(item: any): Reservation {
   };
 }
 
+function normalizeUser(item: any): AuthUser {
+  return {
+    id: String(item.id ?? item.userId ?? ""),
+    name: item.name ?? item.fullName,
+    phone: item.phone ?? item.mobile,
+    role: item.role === "owner" || item.role === "admin" ? item.role : "driver",
+  };
+}
+
+function normalizeMetric(item: any): OwnerMetric {
+  return {
+    label: String(item.label ?? item.title ?? ""),
+    value: item.value ?? 0,
+    tone: ["blue", "green", "amber", "slate"].includes(item.tone) ? item.tone : "slate",
+  };
+}
+
+function normalizeChartPoint(item: any): OwnerChartPoint {
+  return { label: String(item.label ?? item.time ?? item.day ?? ""), value: toNumber(item.value ?? item.revenue ?? item.occupancy) };
+}
+
+function normalizeOwnerParking(item: any): OwnerParking {
+  return {
+    id: String(item.id ?? item.parkingId ?? ""),
+    name: String(item.name ?? item.title ?? ""),
+    spaces: toNumber(item.spaces ?? item.capacity ?? item.total),
+    occupied: toNumber(item.occupied ?? item.occupiedSpots),
+    revenue: toNumber(item.revenue ?? item.todayRevenue),
+    type: item.type === "manual" ? "manual" : "iot",
+    status: ["active", "maintenance", "inactive"].includes(item.status) ? item.status : "inactive",
+  };
+}
+
+function normalizeEntry(item: any): OwnerEntryLog {
+  return {
+    id: String(item.id ?? item.entryId ?? ""),
+    time: String(item.time ?? item.createdAt?.slice?.(11, 16) ?? ""),
+    plate: item.plate ?? item.plateNumber,
+    driver: item.driver ?? item.driverName,
+    status: ["entered", "exited", "pending"].includes(item.status) ? item.status : "pending",
+    type: item.type === "manual" ? "manual" : "iot",
+  };
+}
+
 export const parkingApi = {
-  async getStats(): Promise<PlatformStats> {
-    const data = await request<any>("/stats");
-    return {
-      activeParkings: toNumber(data.activeParkings ?? data.active_parkings),
-      verifiedOwners: toNumber(data.verifiedOwners ?? data.verified_owners),
-      successfulReservations: toNumber(data.successfulReservations ?? data.successful_reservations),
-      averageRating: toNumber(data.averageRating ?? data.average_rating),
-    };
+  async getCurrentUser(): Promise<AuthUser | null> {
+    try {
+      const data = await request<any>("/auth/me");
+      return data ? normalizeUser(data.user ?? data) : null;
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 0 || error.status === 401 || error.status === 403)) return null;
+      throw error;
+    }
   },
 
   async searchParkings(params: SearchRequest): Promise<Parking[]> {
@@ -110,6 +155,17 @@ export const parkingApi = {
       }),
     });
     return normalizeReservation(data);
+  },
+
+  async getOwnerDashboard(): Promise<OwnerDashboard> {
+    const data = await request<any>("/owner/dashboard");
+    return {
+      metrics: Array.isArray(data.metrics) ? data.metrics.map(normalizeMetric) : [],
+      occupancy: Array.isArray(data.occupancy) ? data.occupancy.map(normalizeChartPoint) : [],
+      revenue: Array.isArray(data.revenue) ? data.revenue.map(normalizeChartPoint) : [],
+      parkings: Array.isArray(data.parkings) ? data.parkings.map(normalizeOwnerParking) : [],
+      entries: Array.isArray(data.entries) ? data.entries.map(normalizeEntry) : [],
+    };
   },
 };
 

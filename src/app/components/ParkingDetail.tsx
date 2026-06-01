@@ -11,7 +11,6 @@ interface ParkingDetailProps {
 }
 
 const TIME_SLOTS = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"];
-const BUSY_SLOTS = ["08:00", "09:00", "12:00", "13:00", "17:00", "18:00"];
 const UNAVAILABLE_SLOTS: string[] = [];
 
 export default function ParkingDetail({ parking, searchParams, onBack, onBook }: ParkingDetailProps) {
@@ -22,8 +21,8 @@ export default function ParkingDetail({ parking, searchParams, onBack, onBook }:
   const fromIdx = TIME_SLOTS.indexOf(fromSlot);
   const toIdx = TIME_SLOTS.indexOf(toSlot);
   const hours = Math.max(0, toIdx - fromIdx);
-  const isSurge = BUSY_SLOTS.includes(fromSlot) || parking.surgeMultiplier > 1;
-  const effectivePrice = parking.price * (isSurge ? parking.surgeMultiplier : 1);
+  const isSurge = parking.surgeMultiplier > 1;
+  const effectivePrice = parking.price * parking.surgeMultiplier;
   const total = hours * effectivePrice;
 
   const AMENITIES = [
@@ -111,11 +110,10 @@ export default function ParkingDetail({ parking, searchParams, onBack, onBook }:
 
             {/* Time slots */}
             <div>
-              <h3 style={{ color: "#e2e8f0", fontWeight: 700, marginBottom: "12px", fontSize: "0.95rem" }}>انتخاب ساعت (امروز)</h3>
+              <h3 style={{ color: "#e2e8f0", fontWeight: 700, marginBottom: "12px", fontSize: "0.95rem" }}>انتخاب ساعت</h3>
               <div className="flex flex-wrap gap-2">
                 {TIME_SLOTS.map((slot) => {
                   const unavail = UNAVAILABLE_SLOTS.includes(slot);
-                  const busy = BUSY_SLOTS.includes(slot);
                   const isFrom = slot === fromSlot;
                   const isTo = slot === toSlot;
                   const inRange = TIME_SLOTS.indexOf(slot) > TIME_SLOTS.indexOf(fromSlot) && TIME_SLOTS.indexOf(slot) < TIME_SLOTS.indexOf(toSlot);
@@ -135,9 +133,9 @@ export default function ParkingDetail({ parking, searchParams, onBack, onBook }:
                       }}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{
-                        background: unavail ? "rgba(255,255,255,0.03)" : isFrom || isTo ? "#3b82f6" : inRange ? "rgba(59,130,246,0.15)" : busy ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.05)",
-                        border: `1px solid ${unavail ? "rgba(255,255,255,0.04)" : isFrom || isTo ? "#3b82f6" : inRange ? "rgba(59,130,246,0.3)" : busy ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.08)"}`,
-                        color: unavail ? "#2d3748" : isFrom || isTo ? "white" : busy ? "#f59e0b" : "#94a3b8",
+                        background: unavail ? "rgba(255,255,255,0.03)" : isFrom || isTo ? "#3b82f6" : inRange ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)",
+                        border: `1px solid ${unavail ? "rgba(255,255,255,0.04)" : isFrom || isTo ? "#3b82f6" : inRange ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.08)"}`,
+                        color: unavail ? "#2d3748" : isFrom || isTo ? "white" : "#94a3b8",
                         cursor: unavail ? "not-allowed" : "pointer",
                         textDecoration: unavail ? "line-through" : "none",
                       }}
