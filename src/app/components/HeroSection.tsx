@@ -1,12 +1,10 @@
 import { useMemo, useState } from "react";
 import { Calendar, ChevronLeft, Clock, LocateFixed, MapPin, Search } from "lucide-react";
 import { Button } from "./ui/button";
-import type { SearchRequest } from "../types/parking";
-
-import type { PlatformStats, SearchRequest } from "../types/parking";
+import type { SearchRequest as ParkingSearchRequest } from "../types/parking";
 
 interface HeroSectionProps {
-  onSearch: (query: SearchRequest) => void;
+  onSearch: (query: ParkingSearchRequest) => void;
 }
 
 const TIME_OPTIONS = Array.from({ length: 17 }, (_, index) => `${String(index + 6).padStart(2, "0")}:00`);
