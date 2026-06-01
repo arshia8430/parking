@@ -1,20 +1,10 @@
-import { useState } from "react";
-import { QrCode, MapPin, Clock, ChevronDown, Calendar, X, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { QrCode, MapPin, Clock, ChevronDown, Calendar, X, CheckCircle, XCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "./ui/button";
-import type { Parking } from "./MapView";
-
-interface Reservation {
-  id: string;
-  parking: Parking;
-  date: string;
-  from: string;
-  to: string;
-  total: number;
-  status: "active" | "upcoming" | "completed" | "cancelled";
-}
+import { parkingApi } from "../services/api";
+import type { Reservation } from "../types/parking";
 
 interface MyReservationsProps {
-  parkings: Parking[];
   onShowQR: (r: Reservation) => void;
 }
 
@@ -25,27 +15,39 @@ const STATUS_CONFIG = {
   cancelled: { label: "لغو شده", color: "#ef4444", bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.2)", icon: <XCircle size={13} /> },
 };
 
-export default function MyReservations({ parkings, onShowQR }: MyReservationsProps) {
+export default function MyReservations({ onShowQR }: MyReservationsProps) {
   const [filter, setFilter] = useState<"all" | "active" | "upcoming" | "completed" | "cancelled">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const RESERVATIONS: Reservation[] = [
-    { id: "RES-001", parking: parkings[0], date: "۱۴۰۳/۱۰/۱۵", from: "۰۹:۰۰", to: "۱۳:۰۰", total: 100000, status: "active" },
-    { id: "RES-002", parking: parkings[1], date: "۱۴۰۳/۱۰/۱۷", from: "۱۰:۰۰", to: "۱۴:۰۰", total: 140000, status: "upcoming" },
-    { id: "RES-003", parking: parkings[2], date: "۱۴۰۳/۱۰/۱۲", from: "۰۸:۰۰", to: "۱۲:۰۰", total: 88000, status: "completed" },
-    { id: "RES-004", parking: parkings[3], date: "۱۴۰۳/۱۰/۱۰", from: "۱۲:۰۰", to: "۱۶:۰۰", total: 135000, status: "completed" },
-    { id: "RES-005", parking: parkings[4], date: "۱۴۰۳/۱۰/۰۸", from: "۱۸:۰۰", to: "۲۰:۰۰", total: 56000, status: "cancelled" },
-  ];
-
-  const filtered = filter === "all" ? RESERVATIONS : RESERVATIONS.filter((r) => r.status === filter);
-
-  const counts = {
-    all: RESERVATIONS.length,
-    active: RESERVATIONS.filter((r) => r.status === "active").length,
-    upcoming: RESERVATIONS.filter((r) => r.status === "upcoming").length,
-    completed: RESERVATIONS.filter((r) => r.status === "completed").length,
-    cancelled: RESERVATIONS.filter((r) => r.status === "cancelled").length,
+  const loadReservations = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      setReservations(await parkingApi.getReservations());
+    } catch (err) {
+      setReservations([]);
+      setError(err instanceof Error ? err.message : "خطا در دریافت رزروها");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    void loadReservations();
+  }, []);
+
+  const filtered = useMemo(() => filter === "all" ? reservations : reservations.filter((r) => r.status === filter), [filter, reservations]);
+
+  const counts = useMemo(() => ({
+    all: reservations.length,
+    active: reservations.filter((r) => r.status === "active").length,
+    upcoming: reservations.filter((r) => r.status === "upcoming").length,
+    completed: reservations.filter((r) => r.status === "completed").length,
+    cancelled: reservations.filter((r) => r.status === "cancelled").length,
+  }), [reservations]);
 
   return (
     <div dir="rtl" className="min-h-screen py-8 px-4" style={{ background: "#060c1a", fontFamily: "'Vazirmatn', Tahoma, sans-serif" }}>
@@ -58,10 +60,10 @@ export default function MyReservations({ parkings, onShowQR }: MyReservationsPro
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {[
-            { label: "کل رزرو", value: RESERVATIONS.length, color: "#3b82f6" },
+            { label: "کل رزرو", value: reservations.length, color: "#3b82f6" },
             { label: "رزرو فعال", value: counts.active, color: "#10b981" },
             { label: "تکمیل‌شده", value: counts.completed, color: "#64748b" },
-            { label: "مجموع پرداخت", value: `${(RESERVATIONS.filter(r => r.status !== "cancelled").reduce((s, r) => s + r.total, 0) / 10000).toFixed(0)}۰ هزار`, color: "#f59e0b" },
+            { label: "مجموع پرداخت", value: `${(reservations.filter(r => r.status !== "cancelled").reduce((sum, r) => sum + r.total, 0) / 10000).toFixed(0)}۰ هزار`, color: "#f59e0b" },
           ].map((s) => (
             <div key={s.label} className="p-4 rounded-2xl" style={{ background: "rgba(13,24,48,0.8)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <div style={{ fontSize: "1.3rem", fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -89,8 +91,23 @@ export default function MyReservations({ parkings, onShowQR }: MyReservationsPro
           ))}
         </div>
 
+        {isLoading && (
+          <div className="rounded-2xl p-6 flex items-center justify-center gap-3" style={{ background: "rgba(13,24,48,0.8)", border: "1px solid rgba(255,255,255,0.07)", color: "#94a3b8" }}>
+            <Loader2 size={18} className="animate-spin" style={{ color: "#3b82f6" }} />
+            در حال دریافت رزروها...
+          </div>
+        )}
+
+        {!isLoading && error && (
+          <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", color: "#fbbf24" }}>
+            <AlertCircle className="mx-auto mb-3" />
+            <p className="mb-4 text-sm leading-7">{error}</p>
+            <Button onClick={loadReservations} className="gap-2" style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}><RefreshCw size={15} />تلاش مجدد</Button>
+          </div>
+        )}
+
         {/* Reservations list */}
-        <div className="space-y-3">
+        {!isLoading && !error && <div className="space-y-3">
           {filtered.map((res) => {
             const st = STATUS_CONFIG[res.status];
             const isExpanded = expandedId === res.id;
@@ -98,7 +115,7 @@ export default function MyReservations({ parkings, onShowQR }: MyReservationsPro
               <div key={res.id} className="rounded-2xl overflow-hidden" style={{ background: "rgba(13,24,48,0.8)", border: "1px solid rgba(255,255,255,0.07)", transition: "border-color 0.2s" }}>
                 {/* Main row */}
                 <div className="p-4 flex items-center gap-4 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : res.id)}>
-                  <img src={res.parking.imageUrl} alt={res.parking.name} className="w-16 h-14 rounded-xl object-cover shrink-0" style={{ filter: "brightness(0.65)" }} />
+                  <img src={res.parking.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%23070e1e'/%3E%3Ctext x='80' y='66' text-anchor='middle' fill='%2394a3b8' font-size='18' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E"} alt={res.parking.name} className="w-16 h-14 rounded-xl object-cover shrink-0" style={{ filter: "brightness(0.65)" }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: "0.9rem" }}>{res.parking.name}</span>
@@ -158,9 +175,9 @@ export default function MyReservations({ parkings, onShowQR }: MyReservationsPro
               </div>
             );
           })}
-        </div>
+        </div>}
 
-        {filtered.length === 0 && (
+        {!isLoading && !error && filtered.length === 0 && (
           <div className="text-center py-16">
             <AlertCircle size={40} className="mx-auto mb-4" style={{ color: "#1e3a5f" }} />
             <div style={{ color: "#64748b" }}>رزروی در این دسته‌بندی وجود ندارد</div>
